@@ -1,2 +1,2 @@
-# SOM-RAG-NewAPI
-Murali Kashaboina's retrieval augmented generation, updated to match OpenAI 1.0 API
+# som-driven-qa-rag
+Self Organizing Maps (SOM) ML model can be used to conduct semantic search to populate context required for Retrieval Augmented Generation (RAG) LLM models. This repo contains an example to demonstrate the SOM capability.
