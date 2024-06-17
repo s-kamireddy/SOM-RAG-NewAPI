@@ -65,7 +65,7 @@ class UMAP_Util():
             print( "WARNING: Model is already trained. Ignoring the request..." )
             return
 
-        data_points = data_points.numpy() #convert data to np array to run umap
+        data_points = data_points.cpu().numpy() #convert data to np array to run umap
 
         self.reducer.fit(data_points) #fit model
 
@@ -127,7 +127,7 @@ class UMAP_Util():
             data_points = data_points.view( 1, data_points.shape[0] )
             
         #flatten data_points to compare to our 2d centroids
-        data_points = data_points.numpy() #to array
+        data_points = data_points.cpu().numpy() #to array
         
         data_points = self.reducer.transform(data_points) #flatten
         
