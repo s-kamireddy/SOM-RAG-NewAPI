@@ -51,7 +51,7 @@ class UMAP_Util():
 
         #self.embedding = None
         
-        self.centroids = torch.zeros(k_clusters, input_dimensions, device = self.device) #high dim centroids - do i even need this? 
+        self.centroids = torch.zeros(k_clusters, input_dimensions, device = self.device) #high dim centroids 
         
         self.cluster_centers = None #low dim centroids
 
@@ -71,6 +71,8 @@ class UMAP_Util():
 
         embedding = self.reducer.transform(data_points)
 
+        
+
         self.kmeans.fit(embedding)#kmeans on flattened data
 
         self.cluster_centers = torch.tensor(self.kmeans.cluster_centers_)
@@ -79,13 +81,13 @@ class UMAP_Util():
                     embedding[:, 1], c = self.kmeans.predict(embedding))
         
         plt.scatter(self.cluster_centers[:, 0], self.cluster_centers[:, 1], c='black', s =  200,  alpha=0.5);
-        '''
+        
         #calculate high dimentional means of those clusters
         dict = {}
         for i in range(0, data_points.shape[0]):
             if not self.kmeans.labels_[i] in dict.keys():#group in dict?
                 dict[self.kmeans.labels_[i]] = []
-            dict[self.kmeans.labels_[i]].append([data_points_np[i]])# add the data vector
+            dict[self.kmeans.labels_[i]].append([data_points[i]])# add the data vector
 
 
 
@@ -93,7 +95,10 @@ class UMAP_Util():
             temp = np.concatenate(dict[i], axis = 0)
             tensor_mean = torch.tensor(np.mean(temp, axis = 0))
             self.centroids[i] = tensor_mean #add high dim mean to centroids
-        '''
+        
+        data_points = torch.tensor(data_points).to(self.device)
+        
+        data_point = torch.tensor(data_points).to(self.device)
 
         self.trained = True
 
@@ -104,13 +109,7 @@ class UMAP_Util():
             data_points = data_points.view( 1, data_points.shape[0] )
         
         #flatten data_points to compare to our 2d centroids
-        data_points = data_points.numpy() #to array
-        
-        data_points = self.reducer.transform(data_points) #flatten
-        
-        data_points = torch.tensor(data_points)#back to tensor
-    
-        distances = self.dist_evaluator( data_points, self.cluster_centers ) #calculate distances
+        distances = self.dist_evaluator( data_points, self.centroids ) #calculate distances
         
         best_matching_unit_indexes = torch.argmin( distances, dim=1 )
         
@@ -127,15 +126,10 @@ class UMAP_Util():
             data_points = data_points.view( 1, data_points.shape[0] )
             
         #flatten data_points to compare to our 2d centroids
-        data_points = data_points.cpu().numpy() #to array
-        
-        data_points = self.reducer.transform(data_points) #flatten
-        
-        data_points = torch.tensor(data_points)#back to tensor
         
         topk = int( topk )
         
-        distances = self.dist_evaluator( data_points, self.cluster_centers)
+        distances = self.dist_evaluator( data_points, self.centroids)
         
         topk_best_matching_unit_indexes = torch.topk( distances, topk, dim=1, largest=False ).indices
         
