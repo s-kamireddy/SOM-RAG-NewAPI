@@ -7,14 +7,13 @@ import torch.nn as nn
 import numpy as np
 import sklearn
 from sklearn.cluster import KMeans
-import tsne_torch
-from tsne_torch import TorchTSNE as TSNE
+from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from tqdm.autonotebook import tqdm
 
 from typing import List
 
-class UMAP_Util():
+class TSNE_Util():
     """
     The code is developed based on the following article:
     http://www.ai-junkie.com/ann/som/som1.html
@@ -24,9 +23,10 @@ class UMAP_Util():
     def __init__( 
                     self,
                     input_dimensions : int, 
+                    metric: str = "euclidean",
                     n_components : int = 2,
                     perplexity : int = 30, 
-                    epochs = 1000, 
+                    epochs : int = 1000, 
                     k_clusters : int = 2,
                     device : str = None  
                 ):
@@ -43,13 +43,11 @@ class UMAP_Util():
 
         self.dist_evaluator = dist_eval
 
-        self.reducer = TSNE(n_components=n_components, perplexity= perplexity, n_iter=epochs, verbose=True)
+        self.reducer = TSNE(n_components=n_components, perplexity= perplexity, n_iter=epochs, metric = metric,  verbose=True)
 
         self.kmeans = KMeans(k_clusters)
 
         self.trained = False
-
-        #self.embedding = None
         
         self.centroids = torch.zeros(k_clusters, input_dimensions, device = self.device) #high dim centroids 
         
@@ -67,7 +65,7 @@ class UMAP_Util():
 
         data_points = data_points.cpu().numpy() #convert data to np array to run umap
 
-        #self.reducer.fit(data_points) #fit model
+
 
         embedding = self.reducer.fit_transform(data_points)
 
@@ -97,11 +95,10 @@ class UMAP_Util():
             self.centroids[i] = tensor_mean #add high dim mean to centroids
         
         data_points = torch.tensor(data_points).to(self.device)
-        
-        data_point = torch.tensor(data_points).to(self.device)
 
         self.trained = True
 
+        
         
     def find_best_matching_unit( self, data_points : torch.Tensor ) -> List[ List[ int ] ] :
         if len( data_points.size() ) == 1:
@@ -115,11 +112,7 @@ class UMAP_Util():
         
         best_matching_units = [ self.cluster_centers[ bmu_index.item() ].tolist() for bmu_index in best_matching_unit_indexes ]
         
-        #print("BMU shape:")
-        #print(best_matching_units.shape())
-        
         return best_matching_units
-
     def find_topk_best_matching_units( self, data_points : torch.Tensor, topk : int = 1 ) -> List[ List[ int ] ] :
         if len( data_points.size() ) == 1:
             #batching 
@@ -141,7 +134,7 @@ class UMAP_Util():
             best_matching_units = [ self.cluster_centers[ bmu_index.item() ].tolist() for bmu_index in best_matching_unit_indexes ]
             
             topk_best_matching_units.append( best_matching_units )
-        #print(f"topk matching units shape: {topk_best_matching_units.shape()}")
+
         return topk_best_matching_units
 
 

@@ -97,8 +97,6 @@ class UMAP_Util():
             self.centroids[i] = tensor_mean #add high dim mean to centroids
         
         data_points = torch.tensor(data_points).to(self.device)
-        
-        data_point = torch.tensor(data_points).to(self.device)
 
         self.trained = True
 
