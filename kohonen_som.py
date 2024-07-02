@@ -46,9 +46,9 @@ class KohonenSOM():
                     device : str = None 
                 ):
 
-        self.input_dimensions = int( input_dimensions )
+        self.input_dimensions = int( input_dimensions ) #dimensions of each vector in the input
 
-        self.som_lattice_height = int( som_lattice_height )
+        self.som_lattice_height = int( som_lattice_height ) 
 
         self.som_lattice_width = int( som_lattice_width )
 
@@ -57,7 +57,7 @@ class KohonenSOM():
         else:
             self.learning_rate = float( learning_rate )
 
-        if neighborhood_radius == None:
+        if neighborhood_radius == None: #neighborhood_radius helps to decide how many neighbors get pulled along with the best matching node in training
             self.neighborhood_radius = max( self.som_lattice_height, self.som_lattice_width ) / 2.0
         else:
             self.neighborhood_radius = float( neighborhood_radius )
@@ -67,7 +67,7 @@ class KohonenSOM():
         else:
             self.device = torch.device( device )
         
-        def dist_eval( data_points, weights ):
+        def dist_eval( data_points, weights ): #dist eval function to be used in training
             distances = torch.cdist( data_points, weights,  p=2 )
             #print(f"data_points shape:{data_points.shape }  weight shape {weights.shape}")
             return distances
@@ -76,9 +76,9 @@ class KohonenSOM():
         
         self.total_lattice_nodes = self.som_lattice_height * self.som_lattice_width
         
-        self.lattice_node_weights = torch.randn( self.total_lattice_nodes, self.input_dimensions, device=self.device )
+        self.lattice_node_weights = torch.randn( self.total_lattice_nodes, self.input_dimensions, device=self.device ) #randomly init corresponding array of high-dim weights
         
-        lattice_coordinates = torch.tensor( [ [[i,j] for j in range(self.som_lattice_width)] for i in range( self.som_lattice_height ) ], dtype=torch.int )
+        lattice_coordinates = torch.tensor( [ [[i,j] for j in range(self.som_lattice_width)] for i in range( self.som_lattice_height ) ], dtype=torch.int ) #init a 2-d lattice
 
         self.lattice_coordinates = lattice_coordinates.view( self.total_lattice_nodes, 2 )
         
@@ -91,16 +91,16 @@ class KohonenSOM():
             print( "WARNING: Model is already trained. Ignoring the request..." )
             return
         
-        train_epochs = int( train_epochs )
+        train_epochs = int( train_epochs ) #how many times we iterate over all the nodes
         
-        total_dpoints = data_points.shape[0]
+        total_dpoints = data_points.shape[0] #number of input vectors
         
         data_points = data_points.to( self.device )
         
         for epoch in tqdm( range( train_epochs ), desc="Kohonen's SOM Train Epochs" ):
-            decay_factor = 1.0 - (epoch/train_epochs)
+            decay_factor = 1.0 - (epoch/train_epochs) #decay
             
-            #learning rate is alpha in the paper
+            #learning rate is alpha in the paper, ie less of an impact training in later epochs
             adjusted_lr = self.learning_rate * decay_factor 
         
             #sigma in the paper
@@ -108,17 +108,18 @@ class KohonenSOM():
             
             #sigma square in the paper
             squared_adjusted_lattice_node_radius = adjusted_lattice_node_radius**2
-            
+
+             #evaluate distances between all lattice node weights and all input vectors
             distances = self.dist_evaluator( data_points, self.lattice_node_weights )
             
-            best_matching_units = torch.argmin( distances, dim=1 )
+            best_matching_units = torch.argmin( distances, dim=1 ) #find the indexes of the best matching lattice weight node to each input vector
             
             for i in range( total_dpoints ):
-                data_point = data_points[i]
+                data_point = data_points[i] #pick one input vector
                 
-                bmu_index = best_matching_units[i].item()
+                bmu_index = best_matching_units[i].item() #get BMU index
                 
-                bmu_coordinates = self.lattice_coordinates[ bmu_index ]
+                bmu_coordinates = self.lattice_coordinates[ bmu_index ] #get the coordinates in the 2d-lattice
                 
                 #squared distances of the lattice nodes from the bmu :: dist^2 from equation 6 shown in the paper
                 squared_lattice_node_radii_from_bmu = torch.sum( torch.pow( self.lattice_coordinates.float() - bmu_coordinates.float(), 2), dim=1)
