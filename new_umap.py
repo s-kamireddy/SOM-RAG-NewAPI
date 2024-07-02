@@ -43,15 +43,15 @@ class UMAP_Util():
 
         self.dist_evaluator = dist_eval
 
-        self.reducer = UMAP(n_neighbors = n_neighbors, min_dist = min_dist, n_components = n_components, metric = metric,)
+        self.reducer = UMAP(n_neighbors = n_neighbors, min_dist = min_dist, n_components = n_components, metric = metric) #init umap instance
 
-        self.kmeans = KMeans(k_clusters)
+        self.kmeans = KMeans(k_clusters) #init k_means instance
 
         self.trained = False
 
         #self.embedding = None
         
-        self.centroids = torch.zeros(k_clusters, input_dimensions, device = self.device) #high dim centroids 
+        self.centroids = torch.zeros(k_clusters, input_dimensions, device = self.device) #high dim centroids essentially our "lattice weights"
         
         self.cluster_centers = None #low dim centroids
 
@@ -69,28 +69,26 @@ class UMAP_Util():
 
         self.reducer.fit(data_points) #fit model
 
-        embedding = self.reducer.transform(data_points)
-
-        
+        embedding = self.reducer.transform(data_points) #flatten data
 
         self.kmeans.fit(embedding)#kmeans on flattened data
 
-        self.cluster_centers = torch.tensor(self.kmeans.cluster_centers_)
+        self.cluster_centers = torch.tensor(self.kmeans.cluster_centers_) #find the center of each cluster (2d)
         
         plt.scatter( embedding[:, 0],
-                    embedding[:, 1], c = self.kmeans.predict(embedding))
+                    embedding[:, 1], c = self.kmeans.predict(embedding)) #for visualization purposes
         
-        plt.scatter(self.cluster_centers[:, 0], self.cluster_centers[:, 1], c='black', s =  200,  alpha=0.5);
+        plt.scatter(self.cluster_centers[:, 0], self.cluster_centers[:, 1], c='black', s =  200,  alpha=0.5); #for visualization purposes
         
         #calculate high dimentional means of those clusters
-        dict = {}
+        dict = {} #deictionary to sort vectors into 
         for i in range(0, data_points.shape[0]):
-            if not self.kmeans.labels_[i] in dict.keys():#group in dict?
+            if not self.kmeans.labels_[i] in dict.keys():#check if that cluster is in the dictionary
                 dict[self.kmeans.labels_[i]] = []
-            dict[self.kmeans.labels_[i]].append([data_points[i]])# add the data vector
+            dict[self.kmeans.labels_[i]].append([data_points[i]])# add the data vector to appropriate cluster
 
 
-
+        #compute high dimentional means for each cluster
         for i in range(0, self.kmeans.cluster_centers_.shape[0]):
             temp = np.concatenate(dict[i], axis = 0)
             tensor_mean = torch.tensor(np.mean(temp, axis = 0))
