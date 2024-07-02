@@ -127,11 +127,11 @@ class KohonenSOM():
                 squared_lattice_node_radii_from_bmu = squared_lattice_node_radii_from_bmu.to( self.device )
                 
                 #adjust function phi in the paper
-                lattice_node_weight_adj_factors = torch.exp( -0.5 * squared_lattice_node_radii_from_bmu / squared_adjusted_lattice_node_radius )
+                lattice_node_weight_adj_factors = torch.exp( -0.5 * squared_lattice_node_radii_from_bmu / squared_adjusted_lattice_node_radius ) #nodes closer to bmu are adjusted more
                 
                 lattice_node_weight_adj_factors = lattice_node_weight_adj_factors.to( self.device )
                 
-                final_lattice_node_weight_adj_factors = adjusted_lr * lattice_node_weight_adj_factors
+                final_lattice_node_weight_adj_factors = adjusted_lr * lattice_node_weight_adj_factors #apply lr to adjustments
                 
                 final_lattice_node_weight_adj_factors = final_lattice_node_weight_adj_factors.view( self.total_lattice_nodes, 1 )
              
@@ -139,13 +139,13 @@ class KohonenSOM():
                 
                 lattice_node_weight_adjustments = torch.mul( final_lattice_node_weight_adj_factors, (data_point - self.lattice_node_weights) )
                 
-                self.lattice_node_weights = self.lattice_node_weights + lattice_node_weight_adjustments
+                self.lattice_node_weights = self.lattice_node_weights + lattice_node_weight_adjustments #adjust the lattice node weights
                 
                 self.lattice_node_weights = self.lattice_node_weights.to( self.device )
         print(f"data points dimensions {data_points.shape}  lattice dimensions {self.lattice_node_weights.shape}")
         self.trained = True
 
-    def find_best_matching_unit( self, data_points : torch.Tensor ) -> List[ List[ int ] ] :
+    def find_best_matching_unit( self, data_points : torch.Tensor ) -> List[ List[ int ] ] : #takes input vectors and returns best matching unit from the lattice node weights
         if len( data_points.size() ) == 1:
             #batching 
             data_points = data_points.view( 1, data_points.shape[0] )
@@ -161,7 +161,7 @@ class KohonenSOM():
         
         return best_matching_units
     
-    def find_topk_best_matching_units( self, data_points : torch.Tensor, topk : int = 1 ) -> List[ List[ int ] ] :
+    def find_topk_best_matching_units( self, data_points : torch.Tensor, topk : int = 1 ) -> List[ List[ int ] ] : #takes multiple input vectors and returns topk best matching unit for all
         if len( data_points.size() ) == 1:
             #batching 
             data_points = data_points.view( 1, data_points.shape[0] )
